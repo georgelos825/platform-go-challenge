@@ -32,9 +32,9 @@ type Insight struct {
 // Audience-specific struct
 type Audience struct {
 	Asset
-	Gender       string `json:"gender"`
-	BirthCountry string `json:"birth_country"`
-	AgeGroup     string `json:"age_group"`
-	HoursOnline  int    `json:"hours_online"`
-	Purchases    int    `json:"purchases"`
+	Gender             string `json:"gender"`
+	BirthCountry       string `json:"birth_country"`
+	AgeGroup           string `json:"age_group"`
+	HoursOnline        int    `json:"hours_online"`
+	PurchasesLastMonth int    `json:"purchases_last_month"`
 }
