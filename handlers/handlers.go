@@ -5,7 +5,17 @@ import (
 	"net/http"
 	"platform-go-challenge/models"
 	"platform-go-challenge/storage"
+	"sync"
 )
+
+// convertAssetsToInterface converts a slice of models.Asset to a slice of interface{}
+func convertAssetsToInterface(assets []models.Asset) []interface{} {
+	result := make([]interface{}, len(assets))
+	for i, asset := range assets {
+		result[i] = asset
+	}
+	return result
+}
 
 // Request structure for adding a favorite
 type AddFavoriteRequest struct {
@@ -13,10 +23,35 @@ type AddFavoriteRequest struct {
 	Asset  models.Asset `json:"asset"`
 }
 
-// Get all favorites for a user
+// GetFavoritesHandler retrieves a user's favorites concurrently
 func GetFavoritesHandler(c *gin.Context) {
 	userID := c.Param("user_id")
-	c.JSON(http.StatusOK, gin.H{"favorites": storage.GetFavorites(userID)})
+	var wg sync.WaitGroup
+	results := make([][]interface{}, 3)
+	// Launch concurrent tasks with indexed results
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		charts := storage.GetFavoritesByType(userID, "chart")
+		results[0] = convertAssetsToInterface(charts)
+	}()
+	go func() {
+		defer wg.Done()
+		insights := storage.GetFavoritesByType(userID, "insight")
+		results[1] = convertAssetsToInterface(insights)
+	}()
+	go func() {
+		defer wg.Done()
+		audiences := storage.GetFavoritesByType(userID, "audience")
+		results[2] = convertAssetsToInterface(audiences)
+	}()
+	wg.Wait()
+	// Combine all results into a single slice
+	var favorites []interface{}
+	for _, res := range results {
+		favorites = append(favorites, res...)
+	}
+	c.JSON(http.StatusOK, gin.H{"favorites": favorites})
 }
 
 // Add a favorite

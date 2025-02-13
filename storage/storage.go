@@ -11,6 +11,24 @@ var (
 	favorites = make(map[string][]models.Asset) // UserID → List of Assets
 )
 
+// GetFavoritesByType retrieves all favorites of a specific type for a given user
+func GetFavoritesByType(userID string, assetType string) []models.Asset {
+	mu.Lock()
+	defer mu.Unlock()
+	userFavorites, exists := favorites[userID]
+	if !exists {
+		return []models.Asset{}
+	}
+	// Filter by asset type
+	var filtered []models.Asset
+	for _, fav := range userFavorites {
+		if string(fav.Type) == assetType { // Convert AssetType to string
+			filtered = append(filtered, fav)
+		}
+	}
+	return filtered
+}
+
 // Add asset to favorites
 func AddFavorite(userID string, asset models.Asset) {
 	mu.Lock()
