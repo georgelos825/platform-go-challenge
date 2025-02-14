@@ -11,21 +11,30 @@ var (
 	favorites = make(map[string][]models.Asset) // UserID → List of Assets
 )
 
-// GetFavoritesByType retrieves all favorites of a specific type for a given user
+// GetFavoritesByType retrieves all favorites of a specific type for a given user using parallel filtering
 func GetFavoritesByType(userID string, assetType string) []models.Asset {
 	mu.Lock()
-	defer mu.Unlock()
 	userFavorites, exists := favorites[userID]
+	mu.Unlock()
 	if !exists {
 		return []models.Asset{}
 	}
-	// Filter by asset type
+	// Filter in parallel
 	var filtered []models.Asset
+	var wg sync.WaitGroup
+	var muFilter sync.Mutex
 	for _, fav := range userFavorites {
-		if string(fav.Type) == assetType { // Convert AssetType to string
-			filtered = append(filtered, fav)
-		}
+		wg.Add(1)
+		go func(fav models.Asset) {
+			defer wg.Done()
+			if string(fav.Type) == assetType {
+				muFilter.Lock()
+				filtered = append(filtered, fav)
+				muFilter.Unlock()
+			}
+		}(fav)
 	}
+	wg.Wait()
 	return filtered
 }
 
