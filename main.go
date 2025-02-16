@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"platform-go-challenge/routes"
 )
 
@@ -12,5 +13,9 @@ func main() {
 	// if err != nil {
 	//     log.Fatalf("Failed to set trusted proxies: %v", err)
 	// }
-	r.Run(":8080") // Start API on port 8080
+	// Start HTTPS server
+	log.Println("🚀 Starting HTTPS server on https://localhost:8080")
+	if err := r.RunTLS(":8080", "cert.pem", "key.pem"); err != nil {
+		log.Fatalf("Failed to start HTTPS server: %v", err)
+	}
 }

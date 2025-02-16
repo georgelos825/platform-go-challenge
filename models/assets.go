@@ -1,6 +1,11 @@
 package models
 
-// AssetType defines different asset categories
+type AssetInterface interface {
+	GetID() string
+	GetType() AssetType
+	GetDescription() string
+}
+
 type AssetType string
 
 const (
@@ -9,14 +14,16 @@ const (
 	AudienceType AssetType = "audience"
 )
 
-// Base struct for all assets
 type Asset struct {
 	ID          string    `json:"id"`
 	Type        AssetType `json:"type"`
 	Description string    `json:"description"`
 }
 
-// Chart-specific struct
+func (a Asset) GetID() string          { return a.ID }
+func (a Asset) GetType() AssetType     { return a.Type }
+func (a Asset) GetDescription() string { return a.Description }
+
 type Chart struct {
 	Asset
 	Title      string   `json:"title"`
@@ -24,17 +31,27 @@ type Chart struct {
 	Data       []int    `json:"data"`
 }
 
-// Insight-specific struct
 type Insight struct {
 	Asset
 }
 
-// Audience-specific struct
 type Audience struct {
 	Asset
-	Gender             string `json:"gender"`
-	BirthCountry       string `json:"birth_country"`
-	AgeGroup           string `json:"age_group"`
-	HoursOnline        int    `json:"hours_online"`
-	PurchasesLastMonth int    `json:"purchases_last_month"`
+	Gender                       string `json:"gender"`
+	BirthCountry                 string `json:"birth_country"`
+	AgeGroup                     string `json:"age_group"`
+	HoursSpentDailyOnSocialMedia int    `json:"hours_spent_daily_on_social_media"`
+	PurchasesLastMonth           int    `json:"purchases_last_month"`
 }
+
+func (c Chart) GetID() string          { return c.ID }
+func (c Chart) GetType() AssetType     { return c.Type }
+func (c Chart) GetDescription() string { return c.Description }
+
+func (i Insight) GetID() string          { return i.ID }
+func (i Insight) GetType() AssetType     { return i.Type }
+func (i Insight) GetDescription() string { return i.Description }
+
+func (a Audience) GetID() string          { return a.ID }
+func (a Audience) GetType() AssetType     { return a.Type }
+func (a Audience) GetDescription() string { return a.Description }

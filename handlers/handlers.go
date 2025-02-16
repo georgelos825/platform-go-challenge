@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"platform-go-challenge/models"
@@ -19,63 +20,74 @@ func convertAssetsToInterface(assets []models.Asset) []interface{} {
 
 // Request structure for adding a favorite
 type AddFavoriteRequest struct {
-	UserID string       `json:"user_id"`
-	Asset  models.Asset `json:"asset"`
+	UserID string          `json:"user_id"`
+	Asset  json.RawMessage `json:"asset"`
 }
 
 // GetFavoritesHandler retrieves a user's favorites concurrently
 func GetFavoritesHandler(c *gin.Context) {
 	userID := c.Param("user_id")
 	var wg sync.WaitGroup
-	results := make([][]interface{}, 3)
-	// Launch concurrent tasks with indexed results
-	wg.Add(3)
-	go func() {
+	var mu sync.Mutex
+	var allFavorites []models.AssetInterface
+	getAndAppend := func(assetType string) {
 		defer wg.Done()
-		charts := storage.GetFavoritesByType(userID, "chart")
-		results[0] = convertAssetsToInterface(charts)
-	}()
-	go func() {
-		defer wg.Done()
-		insights := storage.GetFavoritesByType(userID, "insight")
-		results[1] = convertAssetsToInterface(insights)
-	}()
-	go func() {
-		defer wg.Done()
-		audiences := storage.GetFavoritesByType(userID, "audience")
-		results[2] = convertAssetsToInterface(audiences)
-	}()
-	wg.Wait()
-	// Combine all results into a single slice
-	var favorites []interface{}
-	for _, res := range results {
-		favorites = append(favorites, res...)
+		assets := storage.GetFavoritesByType(userID, assetType)
+		mu.Lock()
+		allFavorites = append(allFavorites, assets...)
+		mu.Unlock()
 	}
-	c.JSON(http.StatusOK, gin.H{"favorites": favorites})
+	wg.Add(3)
+	go getAndAppend("chart")
+	go getAndAppend("insight")
+	go getAndAppend("audience")
+	wg.Wait()
+
+	c.JSON(http.StatusOK, gin.H{"favorites": allFavorites})
 }
 
 // Add a favorite
 func AddFavoriteHandler(c *gin.Context) {
-	var req AddFavoriteRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+	var req struct {
+		UserID string          `json:"user_id"`
+		Asset  json.RawMessage `json:"asset"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.UserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
-	// Validate required fields
-	if req.UserID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
+	var base models.Asset
+	if err := json.Unmarshal(req.Asset, &base); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid asset format"})
 		return
 	}
-	if req.Asset.ID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Asset ID is required"})
-		return
-	}
-	if req.Asset.Type != models.ChartType && req.Asset.Type != models.InsightType && req.Asset.Type != models.AudienceType {
+	switch base.Type {
+	case models.ChartType:
+		var chart models.Chart
+		if err := json.Unmarshal(req.Asset, &chart); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid chart format"})
+			return
+		}
+		storage.AddFavorite(req.UserID, chart)
+	case models.AudienceType:
+		var audience models.Audience
+		if err := json.Unmarshal(req.Asset, &audience); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid audience format"})
+			return
+		}
+		storage.AddFavorite(req.UserID, audience)
+	case models.InsightType:
+		var insight models.Insight
+		if err := json.Unmarshal(req.Asset, &insight); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid insight format"})
+			return
+		}
+		storage.AddFavorite(req.UserID, insight)
+	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid asset type"})
 		return
 	}
-	storage.AddFavorite(req.UserID, req.Asset)
-	c.JSON(http.StatusOK, gin.H{"message": "Asset added to favorites"})
+	c.JSON(http.StatusOK, gin.H{"message": "Asset added successfully"})
 }
 
 // Remove a favorite

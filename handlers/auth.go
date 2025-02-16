@@ -4,6 +4,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"platform-go-challenge/storage"
 	"time"
 )
 
@@ -23,7 +24,6 @@ func GenerateToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
 		return
 	}
-
 	// Set token expiration to 1 hour
 	expirationTime := time.Now().Add(1 * time.Hour)
 	claims := &Claims{
@@ -32,7 +32,6 @@ func GenerateToken(c *gin.Context) {
 			ExpiresAt: expirationTime.Unix(),
 		},
 	}
-
 	// Create the token with the claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(jwtSecret)
@@ -40,7 +39,7 @@ func GenerateToken(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
-
+	storage.StoreToken(userID, tokenString)
 	// Return the token
 	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
