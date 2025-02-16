@@ -96,7 +96,7 @@ func AddFavoriteHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid asset type"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Asset added successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Asset added to favorites"})
 }
 
 // Remove a favorite

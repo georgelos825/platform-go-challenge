@@ -94,3 +94,11 @@ func AssetExists(userID, assetID string) bool {
 	}
 	return false
 }
+
+func InitializeTestUser(userID string) {
+	mu.Lock()
+	defer mu.Unlock()
+	if _, exists := favorites[userID]; !exists {
+		favorites[userID] = []models.AssetInterface{}
+	}
+}
