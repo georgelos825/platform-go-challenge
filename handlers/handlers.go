@@ -9,12 +9,6 @@ import (
 	"sync"
 )
 
-// Request structure for adding a favorite
-type AddFavoriteRequest struct {
-	UserID string          `json:"user_id"`
-	Asset  json.RawMessage `json:"asset"`
-}
-
 // GetFavoritesHandler retrieves a user's favorites concurrently
 func GetFavoritesHandler(c *gin.Context) {
 	userID := c.Param("user_id")
