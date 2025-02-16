@@ -47,6 +47,8 @@ func RemoveFavorite(userID, assetID string) {
 			return
 		}
 	}
+	// If asset not found, no deletion performed
+	return
 }
 
 // Edit asset description
@@ -73,4 +75,22 @@ func EditFavorite(userID, assetID, newDescription string) {
 			return
 		}
 	}
+}
+
+func UserExists(userID string) bool {
+	mu.Lock()
+	defer mu.Unlock()
+	_, exists := favorites[userID]
+	return exists
+}
+
+func AssetExists(userID, assetID string) bool {
+	mu.Lock()
+	defer mu.Unlock()
+	for _, asset := range favorites[userID] {
+		if asset.GetID() == assetID {
+			return true
+		}
+	}
+	return false
 }
