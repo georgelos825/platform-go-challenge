@@ -70,9 +70,8 @@ You can use tools like Postman to test the API. Below are the instructions and e
 
 1. Login Endpoint
    URL: POST https://localhost:8080/login
-   Headers:
 
-Content-Type: application/x-www-form-urlencoded
+No additional headers needed when using form-data.
 Body (form-data): user_id=123
 Response:
 {

@@ -24,6 +24,8 @@ func GenerateToken(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
 		return
 	}
+	// Store the user in memory after successful login
+	storage.InitializeTestUser(userID)
 	// Set token expiration to 1 hour
 	expirationTime := time.Now().Add(1 * time.Hour)
 	claims := &Claims{
